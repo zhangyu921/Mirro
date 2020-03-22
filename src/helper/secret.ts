@@ -1,5 +1,4 @@
-const config = window.config;
-
+const { host } = window.config;
 interface Map {
   [propName: string]: string;
   [propName: number]: string;
@@ -19,7 +18,6 @@ const map: Map = {
 };
 
 const reverseMap: Map = {};
-const { host } = config;
 
 Object.keys(map).forEach(n => {
   const v = map[n];
