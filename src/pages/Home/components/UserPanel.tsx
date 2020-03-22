@@ -32,7 +32,7 @@ const UserPanel: React.FC<Props> = ({ user = {} }) => {
   const email = user.email || user.organizationBillingEmail;
   return (
     <Wrap>
-      <img className="avatar" src={user.avatarUrl} alt="avatar" />
+      <img className="avatar" src={user.avatarUrl} alt="" />
       <h1 className="name">{user.name}</h1>
       {user.bio && <p className="describe">{user.bio}</p>}
 

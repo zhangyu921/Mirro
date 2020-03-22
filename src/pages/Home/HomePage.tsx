@@ -1,5 +1,6 @@
-import React from 'react';
-import { Query, QueryResult } from 'react-apollo';
+import React, { useMemo } from 'react';
+import { useQuery } from '@apollo/react-hooks';
+import { QueryResult } from '@apollo/react-common';
 import { match } from 'react-router-dom';
 
 import UserPanel from './components/UserPanel';
@@ -26,41 +27,40 @@ export interface Props {
 const HomePage: React.FC<Props> = ({ match }) => {
   const { type, cursor } = match.params;
 
-  function getVariables() {
-    return type === 'before' ? 'last' : 'first';
-  }
+  const userResult: QueryResult = useQuery(
+    organization ? GET_ORGANIZATION_INFO : GET_USER_INFO
+  );
+
+  const postListResult: QueryResult = useQuery(GET_POSTS_LIST, {
+    variables: {
+      [getVariables(type)]: perPage,
+      order,
+      [type]: cursor
+    }
+  });
+
+  const [posts, pageInfo] = useMemo(() => {
+    const posts = postListResult.data?.repository.issues.edges;
+    const pageInfo = postListResult.data?.repository.issues.pageInfo;
+
+    return [posts, pageInfo];
+  }, [postListResult]);
 
   return (
     <div>
-      <Query query={organization ? GET_ORGANIZATION_INFO : GET_USER_INFO}>
-        {({ data, loading }: QueryResult) => {
-          if (loading) return null;
-          const { user } = data;
-          return <UserPanel user={user} />;
-        }}
-      </Query>
+      {!userResult.error && <UserPanel user={userResult.data?.user} />}
 
-      <Query
-        query={GET_POSTS_LIST}
-        variables={{
-          [getVariables()]: perPage,
-          order,
-          [type]: cursor
-        }}
-      >
-        {({ data, loading }: QueryResult) => {
-          if (loading) return <LoadingIndicator />;
-          const posts = data.repository.issues.edges;
-          const pageInfo = data.repository.issues.pageInfo;
-          return <PostList posts={posts} pageInfo={pageInfo} />;
-        }}
-      </Query>
-
+      {postListResult.loading && <LoadingIndicator />}
+      {!postListResult.error && posts && pageInfo && (
+        <PostList posts={posts} pageInfo={pageInfo} />
+      )}
       <PageFooter />
     </div>
   );
 };
 
-HomePage.propTypes = {};
+function getVariables(type: string) {
+  return type === 'before' ? 'last' : 'first';
+}
 
 export default HomePage;
